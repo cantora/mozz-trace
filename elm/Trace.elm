@@ -11,9 +11,9 @@ data Path = Instr Int | Path Int [Path]
 type SubRoutine = { name:String, base:Int, instructions:[Instruction], path:Path }
 type JsonDict = Dict.Dict String Json.JsonValue
 
-type Transform a = Either String a
+type Error a = Either String a
 
-(>>=) : Transform a -> (a -> Transform b) -> Transform b
+(>>=) : Error a -> (a -> Error b) -> Error b
 ea >>= a_to_eb =
   case ea of
     Right x -> a_to_eb x
@@ -22,37 +22,42 @@ ea >>= a_to_eb =
 error obj str =
   Left <| "error: expected " ++ str ++ " at " ++ (show obj)
 
-lookup : comparable -> JsonDict -> Transform Json.JsonValue
+lookup : comparable -> JsonDict -> Error Json.JsonValue
 lookup k dict =
   case (Dict.lookup k dict) of
     Just v -> Right v
-    _      -> error dict ("key=" ++ (show k))
+    _      -> error dict <| "key=" ++ (show k)
 
-matchArray : Json.JsonValue -> Transform [Json.JsonValue]
+matchArray : Json.JsonValue -> Error [Json.JsonValue]
 matchArray json =
   case json of
     Json.Array xs -> Right xs
     _             -> error json "array"
 
-matchDict : Json.JsonValue -> Transform JsonDict
+matchDict : Json.JsonValue -> Error JsonDict
 matchDict json =
   case json of
     Json.Object dict -> Right dict
     _                -> error json "dict"
 
-matchInt : Json.JsonValue -> Transform Int
+matchInt : Json.JsonValue -> Error Int
 matchInt json =
   case json of
     Json.Number f -> Right (truncate f)
     _             -> error json "number"
 
-matchString : Json.JsonValue -> Transform String
+matchString : Json.JsonValue -> Error String
 matchString json =
   case json of
     Json.String s -> Right s
     _             -> error json "string"
 
-makeBytes : [Json.JsonValue] -> Transform [Int]
+getString d x = (lookup x d) >>= matchString
+getArray  d x = (lookup x d) >>= matchArray
+getInt    d x = (lookup x d) >>= matchInt
+getDict   d x = (lookup x d) >>= matchDict
+
+makeBytes : [Json.JsonValue] -> Error [Int]
 makeBytes arr =
   let
     fn b rest =
@@ -61,19 +66,18 @@ makeBytes arr =
       Right <| n::ns
   in foldr fn (Right []) arr
 
-makeInstruction : JsonDict -> Transform Instruction
+makeInstruction : JsonDict -> Error Instruction
 makeInstruction dict =
   let 
-    get  x = lookup x dict
-    gets x = get x >>= matchString
-    geta x = get x >>= matchArray
+    gets = getString dict
+    geta = getArray dict
   in
     gets "dasm" >>= \dasm ->
     geta "bytes" >>= \arr ->
     makeBytes arr >>= \bytes ->
     Right { dasm=dasm, bytes=bytes }
 
-makeInstructions : [Json.JsonValue] -> Transform [Instruction]
+makeInstructions : [Json.JsonValue] -> Error [Instruction]
 makeInstructions instrs =
   let
     fn json rest =
@@ -82,25 +86,24 @@ makeInstructions instrs =
       Right (i::is)
   in foldr fn (Right []) instrs
 
-makeInstr : JsonDict -> Transform Path
+makeInstr : JsonDict -> Error Path
 makeInstr dict =
   lookup "idx" dict >>= 
   matchInt >>= \n ->
   Right (Instr n)
   
-makeSubPath : JsonDict -> Transform Path
+makeSubPath : JsonDict -> Error Path
 makeSubPath dict =
   let
-    get  x = lookup x dict
-    geti x = get x >>= matchInt
-    geta x = get x >>= matchArray
+    geti = getInt dict
+    geta = getArray dict
   in
     geti "repeats" >>= \repeats ->
     geta "path" >>=
     makePaths >>= \paths ->
     Right (Path repeats paths)
 
-makePaths : [Json.JsonValue] -> Transform [Path]
+makePaths : [Json.JsonValue] -> Error [Path]
 makePaths ps =
   let
     fn json rest =
@@ -109,25 +112,20 @@ makePaths ps =
       Right (path::paths)
   in foldr fn (Right []) ps
 
-makePath : JsonDict -> Transform Path
+makePath : JsonDict -> Error Path
 makePath dict =
-  let
-    get  x = lookup x dict
-    gets x = get x >>= matchString
-  in
-    gets "type" >>= \typ ->
-    if typ == "path"
-      then makeSubPath dict
-      else makeInstr dict
+  getString dict "type" >>= \typ ->
+  if typ == "path"
+    then makeSubPath dict
+    else makeInstr dict
 
-makeSub : JsonDict -> Transform SubRoutine
+makeSub : JsonDict -> Error SubRoutine
 makeSub dict =
   let
-    get  x = lookup x dict 
-    geti x = get x >>= matchInt
-    gets x = get x >>= matchString
-    geta x = get x >>= matchArray
-    getd x = get x >>= matchDict
+    geti = getInt dict
+    gets = getString dict
+    geta = getArray dict
+    getd = getDict dict
   in
     gets "name" >>= \name ->
     geti "base" >>= \base ->
@@ -137,7 +135,7 @@ makeSub dict =
     makePath pdict >>= \path ->
     Right {name=name, base=base, instructions=instrs, path=path}
 
-makeSubs : [Json.JsonValue] -> Transform [SubRoutine]
+makeSubs : [Json.JsonValue] -> Error [SubRoutine]
 makeSubs subs = 
   let
     fn json rest =
