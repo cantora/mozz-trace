@@ -52,7 +52,7 @@ echo
 cat <<ENDHERE
         </script>
     </head>
-    <body onload="init();">
+    <body>
         <script type="text/javascript">
             var thing = Elm.fullscreen(Elm.Main)
             thing.send('loadtrace', mozz_input)
