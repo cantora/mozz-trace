@@ -5,8 +5,8 @@ module Trace (
 import open Either
 import Trace.Json as Json
 import Trace.SubRoutine as SubRoutine
-import Trace.Error ((>>=))
+import Trace.Error ((>>=), Error)
 
-fromJson : Json.Value -> Either String SubRoutine.SubRoutine
+fromJson : Json.Value -> Error SubRoutine.SubRoutine
 fromJson json =
   Json.dict json >>= SubRoutine.make
