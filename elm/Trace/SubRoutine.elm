@@ -17,7 +17,7 @@ lookup k dict =
     _      -> Error.report dict <| "key=" ++ (show k)
 
 getString d x = (lookup x d) >>= Json.string
-getArray  d x = (lookup x d) >>= Json.array
+getList  d x = (lookup x d) >>= Json.list
 getInt    d x = (lookup x d) >>= Json.int
 getDict   d x = (lookup x d) >>= Json.dict
 
@@ -37,10 +37,10 @@ makeInstruction : Json.Dict -> Error Instruction
 makeInstruction dict =
   let 
     gets = getString dict
-    geta = getArray dict
+    getl = getList dict
   in
     gets "dasm" >>= \dasm ->
-    geta "bytes" >>= \arr ->
+    getl "bytes" >>= \arr ->
     makeBytes arr >>= \bytes ->
     Error.ok { dasm=dasm, bytes=bytes }
 
@@ -67,14 +67,14 @@ make dict =
   let
     geti = getInt dict
     gets = getString dict
-    geta = getArray dict
+    getl = getList dict
     getd = getDict dict
   in
     gets "name" >>= \name ->
     geti "base" >>= \base ->
-    geta "instructions" >>= \ilist ->
+    getl "instructions" >>= \ilist ->
     getd "path" >>= \pdict ->
-    geta "meta" >>= \mlist ->
+    getl "meta" >>= \mlist ->
     makeInstructions ilist >>= \instrs ->
     makeMetaSeq mlist >>= \metas ->
     Error.ok {name=name, base=base, instructions=instrs, path=pdict, meta=metas}

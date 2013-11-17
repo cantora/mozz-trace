@@ -1,6 +1,6 @@
 module Trace.Json (
   dict,
-  array,
+  list,
   int,
   string
   ) where
@@ -13,8 +13,8 @@ import open Either
 type Value = Json.JsonValue
 type Dict = DictMod.Dict String Value
 
-array : Value -> Error [Value]
-array json =
+list : Value -> Error [Value]
+list json =
   case json of
     Json.Array xs -> ok xs
     _             -> report json "array"
