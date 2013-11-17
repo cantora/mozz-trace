@@ -6,10 +6,11 @@ import Dict
 import open Either
 import Json
 
-type Instruction = { dasm:String, bytes:[Int] }
-data Path = Instr Int | Path Int [Path]
-type SubRoutine = { name:String, base:Int, instructions:[Instruction], path:Path }
 type JsonDict = Dict.Dict String Json.JsonValue
+
+type Instruction = { dasm:String, bytes:[Int] }
+--data Path = Instr Int | Path Int [Path]
+type SubRoutine = { name:String, base:Int, instructions:[Instruction], path:JsonDict, meta:[JsonDict] }
 
 type Error a = Either String a
 
@@ -86,38 +87,14 @@ makeInstructions instrs =
       Right (i::is)
   in foldr fn (Right []) instrs
 
-makeInstr : JsonDict -> Error Path
-makeInstr dict =
-  lookup "idx" dict >>= 
-  matchInt >>= \n ->
-  Right (Instr n)
-  
-makeSubPath : JsonDict -> Error Path
-makeSubPath dict =
-  let
-    geti = getInt dict
-    geta = getArray dict
-  in
-    geti "repeats" >>= \repeats ->
-    geta "path" >>=
-    makePaths >>= \paths ->
-    Right (Path repeats paths)
-
-makePaths : [Json.JsonValue] -> Error [Path]
-makePaths ps =
+makeMetaSeq : [Json.JsonValue] -> Error [JsonDict]
+makeMetaSeq marr =
   let
     fn json rest =
-      matchDict json >>= makePath >>= \path ->
-      rest >>= \paths ->
-      Right (path::paths)
-  in foldr fn (Right []) ps
-
-makePath : JsonDict -> Error Path
-makePath dict =
-  getString dict "type" >>= \typ ->
-  if typ == "path"
-    then makeSubPath dict
-    else makeInstr dict
+      matchDict json >>= \d ->
+      rest >>= \ds ->
+      Right (d::ds)
+  in foldr fn (Right []) marr
 
 makeSub : JsonDict -> Error SubRoutine
 makeSub dict =
@@ -131,19 +108,11 @@ makeSub dict =
     geti "base" >>= \base ->
     geta "instructions" >>= \ilist ->
     getd "path" >>= \pdict ->
+    geta "meta" >>= \mlist ->
     makeInstructions ilist >>= \instrs ->
-    makePath pdict >>= \path ->
-    Right {name=name, base=base, instructions=instrs, path=path}
+    makeMetaSeq mlist >>= \metas ->
+    Right {name=name, base=base, instructions=instrs, path=pdict, meta=metas}
 
-makeSubs : [Json.JsonValue] -> Error [SubRoutine]
-makeSubs subs = 
-  let
-    fn json rest =
-      matchDict json >>= makeSub >>= \sub ->
-      rest >>= \subs ->
-      Right (sub::subs)
-  in foldr fn (Right []) subs
-
-fromJson : Json.JsonValue -> Either String [SubRoutine]
+fromJson : Json.JsonValue -> Either String SubRoutine
 fromJson json =
-  matchArray json >>= makeSubs
+  matchDict json >>= makeSub
