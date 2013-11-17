@@ -12,6 +12,8 @@ resource/elm/main.js: elm/main.elm
 .PHONY: clean
 clean:
 	rm -f index.html
+	rm -f build/elm/Trace/*
+	rmdir build/elm/Trace
 	rm -f build/elm/*
-	rmdir build/*
+	rmdir build/elm
 	rmdir build
