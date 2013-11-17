@@ -16,7 +16,7 @@ traceJson = Json.fromJSObject <~ traceData
 tree : Json.JsonValue -> Element
 tree json =
   case (Trace.fromJson json) of
-    Right xs -> asText xs
+    Right x  -> asText x
     Left err -> asText err
 
 layout trace = flow down [
