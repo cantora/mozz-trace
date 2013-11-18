@@ -2,12 +2,16 @@ module Trace.Json (
   dict,
   list,
   int,
-  string
+  string,
+  lookupString,
+  lookupInt,
+  lookupDict,
+  lookupList
   ) where
 
 import Json
 import Dict as DictMod
-import Trace.Error (Error, ok, report)
+import Trace.Error (Error, ok, report, (>>=))
 import open Either
 
 type Value = Json.JsonValue
@@ -36,4 +40,15 @@ string json =
   case json of
     Json.String s -> ok s
     _             -> report json "string"
+
+lookup : comparable -> Dict -> Error Value
+lookup k d =
+  case (DictMod.lookup k d) of
+    Just v -> ok v
+    _      -> report d <| "key=" ++ (show k)
+
+lookupString d x = (lookup x d) >>= string
+lookupList   d x = (lookup x d) >>= list
+lookupInt    d x = (lookup x d) >>= int
+lookupDict   d x = (lookup x d) >>= dict
 

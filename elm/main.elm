@@ -5,9 +5,14 @@ import Char
 import Graphics.Element
 import Color
 import open Either
+import String
+import List
 
 import Trace
 import Trace.Error as Error
+import Trace.SubRoutine as SubRoutine
+import Trace.SubRoutine (SubRoutine)
+import Trace.Path (Path, Instr, SubPath)
 
 foreign import jsevent "loadtrace" (Json.toJSObject Json.Null)
   traceData : Signal JS.JSObject
@@ -28,12 +33,22 @@ header = [markdown|
 ...etc
 |]
 
+process : String -> Int -> SubRoutine -> Path String -> String
+process str m_idx _ path = 
+  String.append str <| case path of
+    Instr ii ->
+      "i " ++ (show ii) ++ "\n"
+    SubPath first [] ->
+      first
+    SubPath first _ ->
+      "__\n" ++ first ++ "^^\n"
+
 thing : Json.JsonValue -> Element
 thing trace = 
   let
     fail s = asText <| "failed to process input: " ++ s
-    success sub = asText sub
-  in Error.try (Trace.fromJson trace) success fail
+    go = Trace.traverse process ""
+  in Error.try (go trace) plainText fail
 
 body trace = flow down [
   thing trace,
