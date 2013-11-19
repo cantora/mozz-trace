@@ -33,6 +33,7 @@ header = [markdown|
 ...etc
 |]
 
+{-
 process : String -> Int -> SubRoutine -> Path String -> String
 process str m_idx _ path = 
   String.append str <| case path of
@@ -42,13 +43,26 @@ process str m_idx _ path =
       first
     SubPath first _ ->
       "__\n" ++ first ++ "^^\n"
+-}
+
+process : [Element] -> Int -> SubRoutine -> Path [Element] -> [Element]
+process arr m_idx sub path = 
+  let
+    new_el = case path of
+      Instr ii ->
+        plainText <| sub.instructions
+      SubPath first [] ->
+        flow down first
+      SubPath first _ ->
+        flow down <| [plainText "__\n"] ++ first ++ [plainText "^^\n"]
+  in arr ++ [new_el]
 
 thing : Json.JsonValue -> Element
 thing trace = 
   let
     fail s = asText <| "failed to process input: " ++ s
-    go = Trace.traverse process ""
-  in Error.try (go trace) plainText fail
+    go = Trace.traverse process []
+  in Error.try (go trace) (flow down) fail
 
 body trace = flow down [
   thing trace,
