@@ -1,0 +1,56 @@
+---
+name: asdf
+base: 0x08048000
+instructions: 
+- dasm: int 3
+  bytes: [0xcc]
+  meta: {'eax': 0, 'ebx': 3}
+- dasm: movl $5, %eax
+  bytes: [0xb8, 0x05, 0x00, 0x00, 0x00]
+  meta: { 'eax': 1, 'ebx': 3 }
+- dasm: movl %eax, %ebx
+  bytes: [0x89, 0xc3]
+  meta: { 'eax': 2, 'ebx': 3 }
+- dasm: leave
+  bytes: [0xc9]
+  meta: { 'eax': 3, 'ebx': 3 }
+- dasm: subl $78, %ebp
+  bytes: [0x83, 0xed, 0x4e]
+  meta: { 'eax': 4, 'ebx': 3 }
+- dasm: int 3
+  bytes: [0xcc]
+  meta: { 'eax': 8, 'ebx': 3 }
+- dasm: leave
+  bytes: [0xc9]
+  meta: { 'eax': 5, 'ebx': 3 }
+- dasm: movl $5, %eax
+  bytes: [0xb8, 0x05, 0x00, 0x00, 0x00]
+  meta: { 'eax': 6, 'ebx': 3 }
+- dasm: int 3
+  bytes: [0xcc]
+  meta: { 'eax': 11, 'ebx': 3 }
+- dasm: leave
+  bytes: [0xc9]
+  meta: 
+- dasm: ret
+  bytes: [0xc3]
+
+- 
+- 
+- 
+- { 'eax': 7, 'ebx': 3 }
+- 
+- { 'eax': 9, 'ebx': 3 }
+- { 'eax': 10, 'ebx': 3 }
+- 
+- { 'eax': 12, 'ebx': 3 }
+- 
+- { 'eax': 14, 'ebx': 3 }
+- { 'eax': 15, 'ebx': 3 }
+- { 'eax': 16, 'ebx': 3 }
+- { 'eax': 18, 'ebx': 3 }
+- { 'eax': 19, 'ebx': 3 }
+- { 'eax': 20, 'ebx': 3 }
+- { 'eax': 21, 'ebx': 3 }
+- { 'eax': 22, 'ebx': 3 }
+

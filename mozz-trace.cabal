@@ -1,0 +1,32 @@
+name:               mozz-trace
+version:            0.0.1
+license:            GPL-3
+license-file:       LICENSE
+author:             anthony cantor
+maintainer:         anthony cantor
+copyright:          (c) 2013 anthony cantor
+synopsis:           asdf
+description:        oaisjdf
+cabal-version:      >=1.8
+build-type:         Simple
+
+executable mozz-trace
+  build-depends:
+    base,
+    yaml,
+    unordered-containers,
+    threepenny-gui
+  main-is:          mozz-trace.hs
+  hs-source-dirs:   src
+
+library
+  hs-source-dirs:   src
+  exposed-modules:
+    Data.Mozz.Trace
+  build-depends:
+    base,
+    yaml,
+    unordered-containers
+  ghc-options:
+    -Wall
+    -O2
